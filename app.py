@@ -1,6 +1,6 @@
 from flask import Flask, render_template, jsonify, request
 import sqlite3
-
+import os 
 app = Flask(__name__)
 
 # 取得商品庫存
@@ -42,6 +42,6 @@ def order():
 if __name__ == "__main__":
    import os
 
-port = int(os.environ.get("PORT", 5000))
+port = int(os.environ.get("PORT", 5000))  
 app.run(host="0.0.0.0", port=port, debug=True)
 
