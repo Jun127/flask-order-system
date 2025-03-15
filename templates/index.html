@@ -3,33 +3,68 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>點餐系統</title>
+    <title>無菜單便當</title>
     <script>
-        async function order(id) {
-            let response = await fetch("/order", {
+        let cart = [];
+
+        function addToCart(name, price) {
+            let item = { name, price, extras: [] };
+            cart.push(item);
+            updateCart();
+        }
+
+        function updateCart() {
+            let cartDiv = document.getElementById("cart");
+            cartDiv.innerHTML = cart.map((item, index) => `
+                <p>${item.name} - $${item.price}
+                <button onclick="removeFromCart(${index})">移除</button></p>
+            `).join("");
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCart();
+        }
+
+        async function submitOrder() {
+            let customer_name = document.getElementById("customer_name").value;
+            let notes = document.getElementById("notes").value;
+            let delivery_date = document.getElementById("delivery_date").value;
+            let total_price = cart.reduce((sum, item) => sum + item.price, 0);
+
+            let response = await fetch("/submit_order", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ id: id })
+                body: JSON.stringify({
+                    customer_name, notes, delivery_date,
+                    order_details: JSON.stringify(cart),
+                    total_price
+                })
             });
+
             let result = await response.json();
-            if (result.success) {
-                document.getElementById(`stock-${id}`).innerText = result.new_stock;
-            } else {
-                alert(result.message);
-            }
+            if (result.success) alert("訂單已送出！");
         }
     </script>
 </head>
 <body>
-    <h1>點餐系統</h1>
+    <h1>無菜單便當</h1>
     <ul>
         {% for product in products %}
             <li>
-                {{ product.name }} - 庫存: <span id="stock-{{ product.id }}">{{ product.stock }}</span>
-                <button onclick="order({{ product.id }})">點餐</button>
+                {{ product.category }} - {{ product.name }} (${{ product.price }})
+                <button onclick="addToCart('{{ product.name }}', {{ product.price }})">加入購物車</button>
             </li>
         {% endfor %}
     </ul>
+
+    <h2>購物車</h2>
+    <div id="cart"></div>
+
+    <h2>訂購資訊</h2>
+    <input id="customer_name" placeholder="訂購人暱稱"><br>
+    <input id="delivery_date" type="date"><br>
+    <textarea id="notes" placeholder="備註"></textarea><br>
+    <button onclick="submitOrder()">送出訂單</button>
 </body>
 </html>
-

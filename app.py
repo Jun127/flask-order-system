@@ -4,48 +4,40 @@ import os
 
 app = Flask(__name__)
 
-# 取得商品庫存
-def get_stock():
+# 取得菜單
+def get_menu():
     conn = sqlite3.connect("orders.db")
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM products")
     products = cursor.fetchall()
     conn.close()
-    return [{"id": p[0], "name": p[1], "stock": p[2]} for p in products]
+    return [{"id": p[0], "category": p[1], "name": p[2], "price": p[3]} for p in products]
 
-# 首頁
+# 首頁（顯示菜單）
 @app.route("/")
 def index():
-    return render_template("index.html", products=get_stock())
+    return render_template("index.html", products=get_menu())
 
-# 點餐 API
-@app.route("/order", methods=["POST"])
-def order():
+# 提交訂單
+@app.route("/submit_order", methods=["POST"])
+def submit_order():
     data = request.json
-    product_id = data["id"]
+    customer_name = data["customer_name"]
+    notes = data["notes"]
+    delivery_date = data["delivery_date"]
+    order_details = data["order_details"]
+    total_price = data["total_price"]
 
     conn = sqlite3.connect("orders.db")
     cursor = conn.cursor()
-
-    # 獲取當前庫存
-    cursor.execute("SELECT name, stock FROM products WHERE id = ?", (product_id,))
-    product = cursor.fetchone()
-
-    if product and product[1] > 0:
-        new_stock = product[1] - 1
-        cursor.execute("UPDATE products SET stock = ? WHERE id = ?", (new_stock, product_id))
-        
-        # **記錄訂單**
-        cursor.execute("INSERT INTO orders (product_id, product_name) VALUES (?, ?)", (product_id, product[0]))
-
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True, "new_stock": new_stock})
-    
+    cursor.execute("INSERT INTO orders (customer_name, notes, delivery_date, order_details, total_price) VALUES (?, ?, ?, ?, ?)",
+                   (customer_name, notes, delivery_date, order_details, total_price))
+    conn.commit()
     conn.close()
-    return jsonify({"success": False, "message": "庫存不足"})
 
-# **新增 API：查看所有訂單**
+    return jsonify({"success": True})
+
+# 查看所有訂單
 @app.route("/orders", methods=["GET"])
 def get_orders():
     conn = sqlite3.connect("orders.db")
@@ -55,7 +47,7 @@ def get_orders():
     conn.close()
 
     return jsonify([
-        {"id": o[0], "product_id": o[1], "product_name": o[2], "timestamp": o[3]} 
+        {"id": o[0], "customer_name": o[1], "notes": o[2], "delivery_date": o[3], "order_details": o[4], "total_price": o[5], "timestamp": o[6]}
         for o in orders
     ])
 

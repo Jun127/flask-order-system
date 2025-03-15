@@ -8,25 +8,34 @@ def init_db():
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
+            category TEXT NOT NULL,
             name TEXT NOT NULL,
-            stock INTEGER NOT NULL
+            price INTEGER NOT NULL
         )
     ''')
 
-    # 建立訂單表（存放客戶點餐紀錄）
+    # 建立訂單表（含訂購人資訊）
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS orders (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            product_id INTEGER NOT NULL,
-            product_name TEXT NOT NULL,
+            customer_name TEXT NOT NULL,
+            notes TEXT,
+            delivery_date TEXT NOT NULL,
+            order_details TEXT NOT NULL,
+            total_price INTEGER NOT NULL,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     ''')
 
-    # 如果 `products` 表是空的，則新增商品
-    cursor.execute("SELECT COUNT(*) FROM products")
-    if cursor.fetchone()[0] == 0:
-        cursor.execute("INSERT INTO products (name, stock) VALUES ('A', 10), ('B', 5)")
+    # 初始化菜單
+    cursor.execute("DELETE FROM products")  # 清除舊菜單，防止重複新增
+    menu_items = [
+        ("健康餐", "鮮蝦", 100), ("健康餐", "打拋豬", 100), ("健康餐", "雞胸肉", 100),
+        ("活力餐", "瓜仔肉", 100), ("活力餐", "日式咖哩", 100), ("活力餐", "蔬食", 100),
+        ("活力餐", "氣炸雞塊", 100), ("活力餐", "三杯雞", 100),
+        ("沙拉", "鮮蝦", 100), ("沙拉", "蔬果", 100), ("沙拉", "雞胸肉", 100)
+    ]
+    cursor.executemany("INSERT INTO products (category, name, price) VALUES (?, ?, ?)", menu_items)
 
     conn.commit()
     conn.close()
