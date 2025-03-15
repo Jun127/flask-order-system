@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>點餐系統</title>
+    <script>
+        async function order(id) {
+            let response = await fetch("/order", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: id })
+            });
+            let result = await response.json();
+            if (result.success) {
+                document.getElementById(`stock-${id}`).innerText = result.new_stock;
+            } else {
+                alert(result.message);
+            }
+        }
+    </script>
+</head>
+<body>
+    <h1>點餐系統</h1>
+    <ul>
+        {% for product in products %}
+            <li>
+                {{ product.name }} - 庫存: <span id="stock-{{ product.id }}">{{ product.stock }}</span>
+                <button onclick="order({{ product.id }})">點餐</button>
+            </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+
